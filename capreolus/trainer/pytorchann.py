@@ -214,6 +214,8 @@ class PytorchANNTrainer(Trainer):
         }
         qid_lst = [x['qid'] for x in batch]
         docid_lst = [x['posdocid'] for x in batch]
+        # `labels` contain pointers to the samples in the batch (i.e indices)
+        # It's saying "hey for this qid, the docs in these rows are the relevant ones"
         labels = [[j for j in range(len(docid_lst)) if docid_lst[j] in x['rel_docs']] for x in batch]
         data['labels'] = pack_tensor_2D(labels, default=-1, dtype=torch.int64, length=len(batch))
 
