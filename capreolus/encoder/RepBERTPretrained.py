@@ -52,7 +52,7 @@ class RepBERT_Class(BertPreTrainedModel):
         return sequence_embeddings
 
     def forward(self, input_ids, token_type_ids, valid_mask,
-                position_ids, labels=None):
+                position_ids, labels, is_relevant):
         attention_mask = self._mask_both_directions(valid_mask, token_type_ids)
 
         sequence_output = self.bert(input_ids,
@@ -66,13 +66,13 @@ class RepBERT_Class(BertPreTrainedModel):
 
         batch_size = input_ids.shape[0]
         # First sample is (query, posdoc), second sample is (query, negdoc) - check out TrainPairSampler.
-        posdoc_indexes = [i for i in range(batch_size) if i % 2 == 0]
-        negdoc_indexes = [i for i in range(batch_size) if i % 2 != 0]
+        posdoc_indexes = [i for i in range(batch_size) if is_relevant[i] == 1]
+        negdoc_indexes = [i for i in range(batch_size) if is_relevant[i] != 1]
         posdoc_embeddings = doc_embeddings[posdoc_indexes]
         negdoc_embeddings = doc_embeddings[negdoc_indexes]
 
-        pos_scores = torch.diagonal(torch.matmul(query_embeddings, posdoc_embeddings.T))
-        neg_scores = torch.diagonal(torch.matmul(query_embeddings, negdoc_embeddings.T))
+        pos_scores = torch.diagonal(torch.matmul(query_embeddings[posdoc_indexes], posdoc_embeddings.T))
+        neg_scores = torch.diagonal(torch.matmul(query_embeddings[negdoc_indexes], negdoc_embeddings.T))
 
         loss_fct = torch.nn.MarginRankingLoss(margin=1, reduction="mean")
         loss = loss_fct(pos_scores, neg_scores, torch.ones_like(pos_scores))
@@ -114,7 +114,7 @@ class RepBERTPretrained(Encoder):
         return self.model.module.predict(numericalized_text, mask, is_query=True)
 
     def score(self, batch):
-        return self.model(batch["input_ids"], batch["token_type_ids"], batch["valid_mask"], batch["position_ids"], batch["labels"])
+        return self.model(batch["input_ids"], batch["token_type_ids"], batch["valid_mask"], batch["position_ids"], batch["labels"], batch["is_relevant"])
 
     def test(self, d):
         query = d["query"]

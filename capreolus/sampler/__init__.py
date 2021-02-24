@@ -163,10 +163,10 @@ class TrainPairSampler(Sampler, TrainingSamplerMixin, torch.utils.data.IterableD
             qid = self.rng.choice(all_qids)
             posdocid = self.rng.choice(self.qid_to_reldocs[qid])
             negdocid = self.rng.choice(self.qid_to_negdocs[qid])
-            yield self.extractor.id2vec_for_train(qid, posdocid, negid=None, label=[0, 1],
+            yield self.extractor.id2vec_for_train(qid, posdocid, negid=None, label=1,
                                                   reldocs=set(self.qid_to_reldocs[qid]))
 
-            yield self.extractor.id2vec_for_train(qid, negdocid, negid=None, label=[1, 0],
+            yield self.extractor.id2vec_for_train(qid, negdocid, negid=None, label=0,
                                                   reldocs=set(self.qid_to_reldocs[qid]))
 
 

@@ -131,6 +131,7 @@ class BertText(Extractor):
         data = {
             "posdocid": posid,
             "posdoc": posdoc,
+            "is_relevant": label,
             "rel_docs": reldocs
         }
 
