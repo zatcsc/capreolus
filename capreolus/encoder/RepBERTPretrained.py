@@ -52,7 +52,7 @@ class RepBERT_Class(BertPreTrainedModel):
         return sequence_embeddings
 
     def forward(self, input_ids, token_type_ids, valid_mask,
-                position_ids, labels, is_relevant):
+                position_ids, labels, is_relevant, residuals):
         attention_mask = self._mask_both_directions(valid_mask, token_type_ids)
 
         sequence_output = self.bert(input_ids,
@@ -73,6 +73,9 @@ class RepBERT_Class(BertPreTrainedModel):
 
         pos_scores = torch.diagonal(torch.matmul(query_embeddings[posdoc_indexes], posdoc_embeddings.T))
         neg_scores = torch.diagonal(torch.matmul(query_embeddings[negdoc_indexes], negdoc_embeddings.T))
+        residual = residuals[posdoc_indexes]
+        assert pos_scores.shape == residual.shape, "pos_scores is {} and residual is {}".format(pos_scores.shape, residual.shape)
+        pos_scores = 1 - residual + pos_scores
 
         loss_fct = torch.nn.MarginRankingLoss(margin=1, reduction="mean")
         loss = loss_fct(pos_scores, neg_scores, torch.ones_like(pos_scores))
@@ -114,7 +117,7 @@ class RepBERTPretrained(Encoder):
         return self.model.module.predict(numericalized_text, mask, is_query=True)
 
     def score(self, batch):
-        return self.model(batch["input_ids"], batch["token_type_ids"], batch["valid_mask"], batch["position_ids"], batch["labels"], batch["is_relevant"])
+        return self.model(batch["input_ids"], batch["token_type_ids"], batch["valid_mask"], batch["position_ids"], batch["labels"], batch["is_relevant"], batch["residual"])
 
     def test(self, d):
         query = d["query"]

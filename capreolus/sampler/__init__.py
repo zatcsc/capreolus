@@ -145,7 +145,7 @@ class TrainPairSampler(Sampler, TrainingSamplerMixin, torch.utils.data.IterableD
     We alternate between posdoc and negdocs. This is required for RepBERT.
     """
 
-    module_name = "pair"
+    module_name = "residualpair"
     dependencies = []
 
     def get_hash(self):
@@ -155,6 +155,12 @@ class TrainPairSampler(Sampler, TrainingSamplerMixin, torch.utils.data.IterableD
         return "pair_{0}".format(key)
 
     def generate_samples(self):
+        lambda_train = 0.1
+        epsilon = 1
+
+        # TODO: Fix this naming.
+        trec_run = self.qid_to_docids
+
         all_qids = sorted(self.qid_to_reldocs)
         if len(all_qids) == 0:
             raise RuntimeError("TrainDataset has no valid training pairs")
@@ -163,12 +169,15 @@ class TrainPairSampler(Sampler, TrainingSamplerMixin, torch.utils.data.IterableD
             qid = self.rng.choice(all_qids)
             posdocid = self.rng.choice(self.qid_to_reldocs[qid])
             negdocid = self.rng.choice(self.qid_to_negdocs[qid])
-            yield self.extractor.id2vec_for_train(qid, posdocid, negid=None, label=1,
+            data = self.extractor.id2vec_for_train(qid, posdocid, negid=None, label=1,
                                                   reldocs=set(self.qid_to_reldocs[qid]))
+            data["residual"] = epsilon - lambda_train * (trec_run[qid][posdocid] - trec_run[qid][negdocid])
+            yield data
 
-            yield self.extractor.id2vec_for_train(qid, negdocid, negid=None, label=0,
+            data = self.extractor.id2vec_for_train(qid, negdocid, negid=None, label=0,
                                                   reldocs=set(self.qid_to_reldocs[qid]))
-
+            data["residual"] = epsilon - lambda_train * (trec_run[qid][posdocid] - trec_run[qid][negdocid])
+            yield data
 
 @Sampler.register
 class ReldocAsQuerySampler(Sampler, TrainingSamplerMixin, torch.utils.data.IterableDataset):
@@ -351,7 +360,7 @@ class ResidualTripletSampler(Sampler, TrainingSamplerMixin, torch.utils.data.Ite
                     data = self.extractor.id2vec(qid, posdocid, negdocid, label=[1, 0])
 
                     # This is equation 4 in the CLEAR paper
-                    data["residual"] = epsilon + lambda_train * (self.trec_run[qid][posdocid] - self.trec_run[qid][negdocid])
+                    data["residual"] = epsilon - lambda_train * (self.trec_run[qid][posdocid] - self.trec_run[qid][negdocid])
 
                     yield data
                 except MissingDocError:

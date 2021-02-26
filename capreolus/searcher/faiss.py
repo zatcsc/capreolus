@@ -317,13 +317,11 @@ class FAISSSearcher(Searcher):
             docids = set(bm25_run[qid].keys()).union(set(faiss_run[qid].keys()))
             for docid in docids:
                 if docid in bm25_run[qid] and docid in faiss_run[qid]:
-                    normalized_bm25 = (bm25_run[qid][docid] - bm25_min) / (bm25_max - bm25_min)
-                    normalized_faiss = (faiss_run[qid][docid] - faiss_min) / (faiss_max - faiss_min)
-                    interpolated_run.setdefault(qid, {})[docid] = (normalized_faiss + normalized_bm25) / 2
+                    interpolated_run.setdefault(qid, {})[docid] = (faiss_run[qid][docid] + bm25_run[qid][docid]) / 2
                 elif docid in bm25_run[qid] and docid not in faiss_run[qid]:
-                    interpolated_run.setdefault(qid, {})[docid] = (bm25_run[qid][docid] - bm25_min) / (bm25_max - bm25_min)
+                    interpolated_run.setdefault(qid, {})[docid] = bm25_run[qid][docid]
                 elif docid not in bm25_run[qid] and docid in faiss_run[qid]:
-                    interpolated_run.setdefault(qid, {})[docid] = (faiss_run[qid][docid] - faiss_min) / (faiss_max - faiss_min)
+                    interpolated_run.setdefault(qid, {})[docid] = faiss_run[qid][docid]
 
         if self.benchmark.module_name == "robust04passages":
             interpolated_run = max_pool_trec_passage_run(interpolated_run)
