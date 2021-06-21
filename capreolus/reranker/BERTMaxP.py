@@ -127,5 +127,5 @@ class BERTMaxP(Reranker):
 
     def score(self, d):
         inp = (d["pos_bert_input"], d["pos_mask"], d["pos_seg"], d["neg_bert_input"], d["neg_mask"], d["neg_seg"])
-        return self.model.score(x, **kwargs)
+        return self.model.score(inp)
 
