@@ -36,7 +36,7 @@ class BERTMaxP_Class(torch.nn.Module):
             self.bert = AutoModelForSequenceClassification.from_pretrained("Capreolus/bert-base-msmarco")
         else:
             self.bert = AutoModelForSequenceClassification.from_pretrained(
-                config["pretrained"], hidden_dropout_prob=config["hidden_dropout_prob"], from_pt=True
+                config["pretrained"], hidden_dropout_prob=config["hidden_dropout_prob"]
             )
         self.config = config
 
@@ -124,3 +124,7 @@ class BERTMaxP(Reranker):
     def build_model(self):
         self.model = BERTMaxP_Class(self.extractor, self.config)
         return self.model
+
+    def score(self, x, **kwargs):
+        return self.model.score(x, **kwargs)
+
