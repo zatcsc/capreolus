@@ -340,7 +340,7 @@ class BertPassage(Extractor):
         padded_input_line = padlist(input_line, padlen=maxseqlen, pad_token=self.pad_tok)
         inp = self.tokenizer.convert_tokens_to_ids(padded_input_line)
         mask = [1] * len(input_line) + [0] * (len(padded_input_line) - len(input_line))
-        seg = [0] * (len(query_toks) + 2) + [1] * (len(padded_input_line) - len(query_toks) - 2)
+        seg = [0] * (len(query_toks) + 2) + [1] * len(psg_toks) + [0]*(len(padded_input_line) - len(input_line))
         return inp, mask, seg
 
     def id2vec(self, qid, posid, negid=None, label=None):
