@@ -44,7 +44,9 @@ class BERTMaxP_Class(torch.nn.Module):
         """
         Returns logits of shape [2]
         """
-        doc_bert_input, doc_mask, doc_seg = x[0], x[1], x[2]
+        doc_bert_input, doc_mask, doc_seg = x[0].view(-1, self.extractor.config["maxseqlen"]), \
+                                            x[1].view(-1, self.extractor.config["maxseqlen"]),  \
+                                            x[2].view(-1, self.extractor.config["maxseqlen"])
         if "roberta" in self.config["pretrained"]:
             doc_seg = torch.zeros_like(doc_mask)  # since roberta does not have segment input
         passage_scores = self.bert(doc_bert_input, attention_mask=doc_mask, token_type_ids=doc_seg)[0]
