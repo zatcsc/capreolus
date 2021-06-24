@@ -32,6 +32,9 @@ class TFCEDRKNRM_Class(tf.keras.layers.Layer):
             self.bert = TFAutoModel.from_pretrained(
                 "bert-base-uncased", hidden_dropout_prob=config["hidden_dropout_prob"], output_hidden_states=True
             )
+        else:
+            self.bert = TFAutoModel.from_pretrained(
+                config["pretrained"], hidden_dropout_prob=config["hidden_dropout_prob"], output_hidden_states=True)
 
         self.hidden_size = self.bert.config.hidden_size
         mus = list(self.config["mus"]) + [1.0]
